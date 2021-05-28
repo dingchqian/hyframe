@@ -6,9 +6,7 @@ namespace App\Middleware;
 
 
 use App\Controller\Admin\BaseController;
-use App\Service\Dao\AdminDao;
 use App\Service\Dao\SettingDao;
-use Hyperf\Di\Annotation\Inject;
 use Hyperf\Utils\Context;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;

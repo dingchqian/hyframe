@@ -15,4 +15,5 @@ use Hyperf\DbConnection\Model\Model as BaseModel;
 
 abstract class Model extends BaseModel
 {
+    public $timestamps = false;
 }
