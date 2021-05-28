@@ -11,28 +11,47 @@ declare(strict_types=1);
  */
 namespace App\Controller;
 
+use App\Kernel\Http\Response;
+use App\Service\Dao\SettingDao;
 use Hyperf\Di\Annotation\Inject;
 use Hyperf\HttpServer\Contract\RequestInterface;
-use Hyperf\HttpServer\Contract\ResponseInterface;
+use Hyperf\Logger\LoggerFactory;
 use Psr\Container\ContainerInterface;
 
 abstract class AbstractController
 {
     /**
-     * @Inject
+     * @Inject()
      * @var ContainerInterface
      */
     protected $container;
 
     /**
-     * @Inject
      * @var RequestInterface
      */
     protected $request;
 
     /**
-     * @Inject
-     * @var ResponseInterface
+     * @var Response
      */
     protected $response;
+
+    /**
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+
+    /**
+     * 构造函数
+     * Author: Jason<dcq@kuryun.cn>
+     */
+    public function __construct()
+    {
+        $this->response = $this->container->get(Response::class);
+        $this->request = $this->container->get(RequestInterface::class);
+        $this->logger = di(LoggerFactory::class)->get('log', 'default');
+        if(! config('system')){
+            di(SettingDao::class)->settings();
+        }
+    }
 }

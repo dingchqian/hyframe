@@ -1,0 +1,228 @@
+{layout name="admin/layout/base" /}
+<div class="layui-tab layui-tab-brief" lay-filter="tabBrief">
+    <ul class="layui-tab-title" style="margin-bottom: 15px;">
+        <li class='' >
+            <a href="/admin/mallgoods/edit?id={$goods_info.id}">基本信息</a>
+        </li>
+        <li class='layui-this' >
+            <a>商品sku</a>
+        </li>
+    </ul>
+    <div class="layui-tab-content">
+        <div id="app">
+            <div class="layui-row">
+                <div class="layui-col-md8">
+                    <div class="layui-collapse">
+                        <div class="layui-colla-item"
+                             v-for="(spec, i) in specList"
+                             :key="'spec-'+i"
+                        >
+                            <h2 class="layui-colla-title">
+                                <div class="layui-col-md11">{{spec.title}}</div>
+                                <div class="layui-col-md1" style="text-align: right;" @click="onClickRemoveSpec(i)">
+                                    <i class="layui-icon layui-icon-delete" style="color: red"></i>
+                                </div>
+                            </h2>
+                            <div class="layui-colla-content layui-show">
+                                <div>
+                                    <button type="button" class="layui-btn layui-btn-sm  layui-btn-radius layui-btn-primary"
+                                            v-for="(item, j) in spec.item_list"
+                                            :key="'item-'+j">
+                                        {{item.title}}
+                                        <i class="layui-icon layui-icon-delete" style="color: red" @click="onClickRemoveItem(i, j)"></i>
+                                    </button>
+                                </div>
+                                <div class="layui-form-item" style="margin-top: 10px;">
+                                    <div class="layui-inline" style="margin-bottom: 0">
+                                        <input type="text" required  lay-verify="required" placeholder="请输入属性值" class="layui-input"
+                                               :id="'inputItem' + i">
+                                    </div>
+                                    <button type="button" class="layui-btn layui-btn-warm layui-btn-sm"
+                                            @click="onClickAddItem(i)">新增属性值</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layui-form-item" style="margin-top: 10px;">
+                        <div class="layui-inline" style="margin-bottom: 0">
+                            <input type="text" required lay-verify="required" placeholder="请输入规格" class="layui-input"
+                                   v-model="inputSpec">
+                        </div>
+                        <button type="button" class="layui-btn layui-btn-normal"
+                                @click="onClickAddSpec">新增规格</button>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <div class="layui-row">
+                <div class="layui-col-m12">
+                    <table class="layui-table">
+                        <thead>
+                        <tr>
+                            <th v-for="(spec, i) in specList"
+                                :key="'spec-'+i">{{spec.title}}</th>
+                            <th>库存</th>
+                            <th>价格</th>
+                            <th>上架状态(1上架,0下架)</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr v-for="(sku, j) in list">
+                            <td v-for="(v, k) in sku" v-if="k != 'id' && k != 'item_ids'">
+                                <template v-if="k.indexOf('title')!=-1">{{v}}</template>
+                                <template v-if="k=='price'">
+                                    <input type="text" required
+                                           lay-verify="required"
+                                           class="layui-input"
+                                           v-model="sku.price">
+                                </template>
+                                <template v-if="k=='stock'">
+                                    <input type="number" min="0" required
+                                           lay-verify="required" class="layui-input"
+                                           v-model="sku.stock">
+                                </template>
+                                <template v-if="k=='status'">
+                                    <input type="number" required min="0" max="1"
+                                           lay-verify="required" class="layui-input"
+                                           v-model="sku.status">
+                                </template>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <button type="button" class="layui-btn layui-btn-normal"
+                        @click="onClickSubmit">保存</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.bootcss.com/vue/2.6.11/vue.min.js"></script>
+<script>
+    //注意：折叠面板 依赖 element 模块，否则无法进行功能性操作
+    layui.use(['element', 'jquery', 'layer'], function(){
+        var element = layui.element
+            , $ = layui.jquery
+            , layer = layui.layer;
+
+        const specTemplate = (title = '') => {
+            return {id: 0, title: title, item_list: []}
+        }, itemTemplate = (title = '') => {
+            return {id: 0, title: title}
+        };
+
+        //笛卡尔积算法
+        function cartesianProductOf() {
+            return Array.prototype.reduce.call(arguments, (a, b) => {
+                var ret = [];
+                a.forEach((aItem) => {
+                    b.forEach((bItem) => {
+                        ret.push(aItem.concat([bItem]));
+                    });
+                });
+                return ret;
+            }, [[]]);
+        }
+
+        const app = new Vue({
+            el: '#app',
+            data:{
+                //specList: [{id: 1, title: '颜色', item_list: [{id: 1, title: '红'}]}],
+                //list: [{id: 1, item_ids: '1,3', item_title_1: '红',  item_title_2: 'L', price: 1, stock: 1000, status: 1}],
+                specList: {$spec_list|raw},
+                list: {$sku_list|raw},
+                goodsInfo: {$goods_info_json|raw},
+                inputSpec: '',
+            },
+            created() {
+                if(this.specList.length > 0 && this.list.length < 1){
+                    this.sortSku();
+                }
+            },
+            methods:{
+                sortSku(){ //整理sku
+                    var itemIdList = []
+                        , itemList = [];
+                    this.specList.forEach((spec, i) => {
+                        var temp = [];
+                        spec.item_list.forEach((item, j) => {
+                            temp.push(item.id);
+                            itemList[item.id] = {title: item.title, spec_id: spec.id};
+                        });
+                        itemIdList.push(temp);
+                    });
+                    itemIdList = cartesianProductOf(...itemIdList);
+                    this.list = [];
+                    itemIdList.forEach((itemIdList) => {
+                        var t = {};
+                        itemIdList.forEach((id) => {
+                            t[('title_' + id)] = itemList[id].title;
+                        });
+                        Object.assign(t, {id: 0, item_ids: itemIdList.join(','), stock: 1000, price: this.goodsInfo.price, status: 1});
+                        this.list.push(t);
+                    });
+                },
+                onClickAddSpec(){
+                    var newData = specTemplate(this.inputSpec);
+                    $.post("/admin/mallgoods/specSavePost", {goods_id: this.goodsInfo.id,title: this.inputSpec}, (res) => {
+                        if(res.code === 1){
+                            newData.id = res.data.id;
+                            this.specList.push(newData);
+                            element.render('collapse');
+                            this.inputSpec = '';
+                        }else{
+                            layer.alert(res.msg);
+                        }
+                    });
+                },
+                onClickAddItem(i){
+                    var newData = itemTemplate($('#inputItem' + i).val());
+                    $.post("/admin/mallgoods/itemSavePost", {goods_id: this.goodsInfo.id, spec_id: this.specList[i].id, title: newData.title}, (res) => {
+                        if(res.code === 1){
+                            newData.id = res.data.id;
+                            this.specList[i].item_list.push(newData);
+                            this.sortSku();
+                            $('#inputItem' + i).val('');
+                        }else{
+                            layer.alert(res.msg);
+                        }
+                    });
+                },
+                onClickRemoveSpec(i){
+                    $.post("/admin/mallgoods/specDelPost", {id: this.specList[i].id}, (res) =>  {
+                        if(res.code !== 1){
+                            layer.alert(res.msg);
+                        }
+                    });
+                    this.specList.splice(i, 1);
+                },
+                onClickRemoveItem(i, j){
+                    $.post("/admin/mallgoods/itemDelPost", {id: this.specList[i].item_list[j].id}, (res) =>  {
+                        if(res.code !== 1){
+                            layer.alert(res.msg);
+                        }
+                    });
+                    this.specList[i].item_list.splice(j, 1);
+                    this.sortSku();
+                },
+                /**
+                 * 点击保存并发布
+                 */
+                onClickSubmit(){
+                    let loading_index = layer.load(1);
+                    //console.log(this.list);return;
+                    //[{id: 1, item_ids: '1,3', item_title_1: '红',  item_title_2: 'L', price: 1, stock: 1000, status: 1}]
+                    $.post("/admin/mallgoods/skuSavePost", {sku_list: this.list, goods_id: this.goodsInfo.id}, (res) => {
+                        layer.close(loading_index);
+                        if(res.code === 1){
+                            layer.msg(res.msg);
+                        }else{
+                            layer.alert(res.msg);
+                        }
+                    });
+                },
+            }
+        });
+    });
+</script>

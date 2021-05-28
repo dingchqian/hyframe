@@ -16,6 +16,8 @@
         "hyperf/cache": "~2.1.0",
         "hyperf/command": "~2.1.0",
         "hyperf/config": "~2.1.0",
+        "hyperf/constants": "^2.1",
+        "hyperf/database": "~2.1.0",
         "hyperf/db-connection": "~2.1.0",
         "hyperf/framework": "~2.1.0",
         "hyperf/guzzle": "~2.1.0",
@@ -23,8 +25,12 @@
         "hyperf/logger": "~2.1.0",
         "hyperf/memory": "~2.1.0",
         "hyperf/process": "~2.1.0",
-        "hyperf/database": "~2.1.0",
-        "hyperf/redis": "~2.1.0"
+        "hyperf/redis": "~2.1.0",
+        "hyperf/session": "^2.1",
+        "hyperf/task": "^2.1",
+        "hyperf/validation": "^2.1",
+        "hyperf/view": "^2.1",
+        "sy-records/think-template": "^2.0"
     },
     "require-dev": {
         "swoole/ide-helper": "^4.5",
@@ -45,7 +51,9 @@
         "psr-4": {
             "App\\": "app/"
         },
-        "files": []
+        "files": [
+            "app/Kernel/Functions.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
