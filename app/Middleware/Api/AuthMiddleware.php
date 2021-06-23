@@ -5,17 +5,15 @@ declare(strict_types=1);
 namespace App\Middleware\Api;
 
 use App\Constants\ErrorCode;
-use App\Controller\Api\BaseController;
-use App\Service\Dao\UserDao;
-use Hyperf\Utils\Context;
+use App\Controller\AbstractController;
+use App\Service\UserAuth;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use Hyperf\Utils\Codec\Json;
 
-class AuthMiddleware extends BaseController implements MiddlewareInterface
+class AuthMiddleware extends AbstractController implements MiddlewareInterface
 {
     /**
      * @var ContainerInterface
@@ -24,16 +22,10 @@ class AuthMiddleware extends BaseController implements MiddlewareInterface
     protected $module = '';
     protected $controller = '';
     protected $action = '';
-    protected $token;
-    protected $loginSession;
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
-        [$this->module, $this->controller, $this->action] = explode('/', substr($this->request->getUri()->getPath(), 1));
-        Context::set('module', $this->module);
-        Context::set('controller', $this->controller);
-        Context::set('action', $this->action);
-
+        [$this->module, $this->controller, $this->action] = explode('/', substr($request->getUri()->getPath(), 1));
         if(($res = $this->checkToken()) !== true){
             return $res;
         }
@@ -42,56 +34,17 @@ class AuthMiddleware extends BaseController implements MiddlewareInterface
     }
 
     /**
-     * 是否需要token
-     * @return bool
-     * Author: fudaoji<fdj@kuryun.cn>
-     */
-    protected function needToken(){
-        if(in_array(strtolower($this->controller), ['home', 'sms', 'auth', 'mall', 'o2o', 'tbk', 'forum'])){
-            return  false;
-        }
-        return  true;
-    }
-
-    /**
      * 校验登录
-     * Author: fudaoji<fdj@kuryun.cn>
+     * Author: Jason<dcq@kuryun.cn>
      */
     protected function checkToken(){
         $this->checkSign();
-        $token = $this->request->getHeaderLine($this->tokenName);
+        $token = $this->request->getHeaderLine(UserAuth::X_TOKEN);
         if($token){
-            $this->token = $token;
-            Context::set('token', $token);
-            $login_session = \redis()->get($this->token);
-            if($login_session){ //续时
-                $this->loginSession = Json::decode($login_session, true);
-                \redis()->setex($this->token, 86400 * 7, Json::encode($this->loginSession));
-                $this->setUserInfo();
-            }
+            UserAuth::instance()->reload($token);
         }
 
-        if($this->needToken() && empty($this->loginSession)){
-            return $this->response->fail(ErrorCode::TOKEN_INVALID, '登录会话过期');
-        }
-        return true;
-    }
-    protected function checkTokenBak(){
-        $this->checkSign();
-        $need_token = $this->needToken();
-        $token = $this->request->getHeaderLine($this->tokenName);
-        if($need_token && empty($token)){
-            return $this->response->fail(ErrorCode::TOKEN_INVALID, '登录会话过期');
-        }
-        $this->token = $token;
-        Context::set('token', $token);
-        $login_session = \redis()->get($this->token);
-        if($login_session){ //续时
-            $this->loginSession = Json::decode($login_session, true);
-            \redis()->setex($this->token, 86400 * 7, Json::encode($this->loginSession));
-            $this->setUserInfo();
-        }
-        if($need_token && empty($this->loginSession)){
+        if($this->needToken() && !UserAuth::instance()->build()->getUserId()){
             return $this->response->fail(ErrorCode::TOKEN_INVALID, '登录会话过期');
         }
         return true;
@@ -128,14 +81,14 @@ class AuthMiddleware extends BaseController implements MiddlewareInterface
     }
 
     /**
-     * 用户信息
-     * @return mixed
+     * 是否需要token
+     * @return bool
      * Author: fudaoji<fdj@kuryun.cn>
      */
-    private function setUserInfo()
-    {
-        $user = $this->container->get(UserDao::class)->getOne($this->loginSession['uid']);
-        Context::set("user_info", $user);
-        return $user;
+    protected function needToken(){
+        if(in_array(strtolower($this->controller), ['home'])){
+            return false;
+        }
+        return true;
     }
 }

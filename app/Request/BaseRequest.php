@@ -9,11 +9,8 @@
 declare(strict_types=1);
 namespace App\Request;
 
-
 use Hyperf\HttpServer\Request;
-use Hyperf\Utils\Codec\Json;
 use Hyperf\Validation\Contract\ValidatorFactoryInterface;
-use Hyperf\Validation\Request\FormRequest;
 use Hyperf\Di\Annotation\Inject;
 
 abstract class BaseRequest
@@ -29,6 +26,7 @@ abstract class BaseRequest
     protected $ruleEgtZero = 'required|integer|min:0';
     protected $ruleArray = 'required|array';
     protected $rules = [];
+
     /**
      * @Inject()
      * @var Request
@@ -74,12 +72,6 @@ abstract class BaseRequest
         }else{
             return ['code' => 1, 'data' => $validator->validated()];
         }
-        /*try{
-            $validated_data = $this->validated();
-            return ['code' => 1, 'data' => $validated_data];
-        }catch (\Hyperf\Validation\ValidationException $e){
-            return ['code' => 0, 'msg' => array_shift($e->errors())[0]];
-        }*/
     }
 
     /**
