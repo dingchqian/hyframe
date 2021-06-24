@@ -56,7 +56,7 @@ abstract class HttpTestCase extends TestCase
         if($token){
             redis()->set('test_token', $token);
         }
-        return redis()->get('test_token1');
+        return redis()->get('test_token');
     }
 
     /**

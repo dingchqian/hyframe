@@ -6,6 +6,7 @@ namespace App\Middleware\Api;
 
 use App\Constants\ErrorCode;
 use App\Controller\AbstractController;
+use App\Exception\ApiException;
 use App\Service\UserAuth;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -26,28 +27,16 @@ class AuthMiddleware extends AbstractController implements MiddlewareInterface
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         [$this->module, $this->controller, $this->action] = explode('/', substr($request->getUri()->getPath(), 1));
-        if(($res = $this->checkToken()) !== true){
-            return $res;
+
+        if($token = $this->request->getHeaderLine(UserAuth::X_TOKEN)){
+            UserAuth::instance()->reload($token)->build();
         }
+        if($this->needToken() && !$token) {
+            throw new ApiException(ErrorCode::TOKEN_INVALID);
+        }
+        $this->checkSign();
 
         return $handler->handle($request);
-    }
-
-    /**
-     * 校验登录
-     * Author: Jason<dcq@kuryun.cn>
-     */
-    protected function checkToken(){
-        $this->checkSign();
-        $token = $this->request->getHeaderLine(UserAuth::X_TOKEN);
-        if($token){
-            UserAuth::instance()->reload($token);
-        }
-
-        if($this->needToken() && !UserAuth::instance()->build()->getUserId()){
-            return $this->response->fail(ErrorCode::TOKEN_INVALID, '登录会话过期');
-        }
-        return true;
     }
 
     /**
@@ -76,7 +65,7 @@ class AuthMiddleware extends AbstractController implements MiddlewareInterface
         $sign = md5($params_str);
         //判断sign
         if($sign !== $this->request->getHeaderLine('sign')){
-            return $this->response->fail(ErrorCode::ERROR_PARAM, '签名错误');
+            throw new ApiException(ErrorCode::ERROR_PARAM, '签名错误');
         }
     }
 
