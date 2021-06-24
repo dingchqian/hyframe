@@ -72,7 +72,7 @@ abstract class BaseRequest
         if ($validator->fails()){
             throw new ApiException(ErrorCode::BAD_PARAM, $validator->errors()->first());
         }
-        return ['code' => 1, 'data' => $validator->validated()];
+        return $validator->validated();
     }
 
     /**

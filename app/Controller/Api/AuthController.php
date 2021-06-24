@@ -42,8 +42,8 @@ class AuthController extends AbstractController
      * Author: Jason<dcq@kuryun.cn>
      */
     public function registerPost() {
-        $res = $this->authValidator->doValidate('register');
-        $user = $this->userService->register($res['data']);
+        $params = $this->authValidator->doValidate('register');
+        $user = $this->userService->register($params);
 
         return $this->response->success(['user_info' => $user->getUser()], '注册成功');
     }
@@ -53,8 +53,8 @@ class AuthController extends AbstractController
      * Author: Jason<dcq@kuryun.cn>
      */
     public function loginPost() {
-        $res = $this->authValidator->doValidate('login');
-        $user = $this->userService->login($res['data']);
+        $params = $this->authValidator->doValidate('login');
+        $user = $this->userService->login($params);
 
         return $this->response->success(['token' => $user->getToken(), 'user_info' => $user->getUser()], '登录成功');
     }

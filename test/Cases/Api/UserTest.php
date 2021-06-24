@@ -13,8 +13,15 @@ use HyperfTest\HttpTestCase;
 
 class UserTest extends HttpTestCase
 {
-    public function testGetUser() {
-        $res = $this->doJson('/api/user/getUserPost', [], true);
+    public function testSetUser() {
+        $params = [
+            'province' => '福建省',
+            'city' => '厦门市',
+            'area' => '湖里区',
+            'sex' => '1',
+            'headimgurl' => 'https://zyx.images.huihuiba.net/FjIw_L1Pmha-5gZqGVdZUhRNr4yg'
+        ];
+        $res = $this->doJson('/api/user/setUserPost', $params, true);
 
         var_dump($res);
         $this->assertContains($res['code'], $this->codeArr);

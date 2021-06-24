@@ -38,6 +38,7 @@ class UserService extends Service
         $insert_data['password'] = md5($params['password']);
         $result = $this->userDao->addOne($insert_data);
         if($result) {
+            unset($result['password']);
             return UserAuth::instance()->init($result);
         }
         throw new ApiException(ErrorCode::BAD_PARAM, '注册失败');
@@ -58,8 +59,27 @@ class UserService extends Service
             throw new ApiException(ErrorCode::BAD_PARAM, '账号或密码错误');
         }
         if($result) {
+            unset($result['password']);
             return UserAuth::instance()->init($result);
         }
         throw new ApiException(ErrorCode::BAD_PARAM, '登录失败');
+    }
+
+    /**
+     * 完善用户信息
+     * @param $params array
+     * @return mixed
+     * Author: Jason<dcq@kuryun.cn>
+     */
+    public function setUser(array $params) {
+        $update_data = $params;
+        $update_data['id'] = get_user_id();
+        $result = $this->userDao->updateOne($update_data);
+
+        if($result) {
+            unset($result['password']);
+            return UserAuth::instance()->init($result);
+        }
+        throw new ApiException(ErrorCode::BAD_PARAM, '保存失败');
     }
 }

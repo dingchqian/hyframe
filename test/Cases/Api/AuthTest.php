@@ -26,7 +26,7 @@ class AuthTest extends HttpTestCase
 
     public function testLogin() {
         $res = $this->doJson('/api/auth/loginPost', [
-            'mobile' => '13212345679',
+            'mobile' => '13212345678',
             'password' => '123456',
         ], false);
 

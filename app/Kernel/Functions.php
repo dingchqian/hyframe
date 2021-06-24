@@ -10,6 +10,7 @@ declare(strict_types=1);
  */
 
 use App\Kernel\Tree\Tree;
+use App\Service\UserAuth;
 use GuzzleHttp\HandlerStack;
 use Hyperf\Amqp\Message\ProducerMessageInterface;
 use Hyperf\Amqp\Producer;
@@ -136,6 +137,17 @@ if(!function_exists('curl_img')) {
         }
         unset($info, $data, $base_64);
         return $msg;
+    }
+}
+
+/**
+ * api模块获取当前登入的用户id
+ * @return int
+ * Author: Jason<dcq@kuryun.cn>
+ */
+if(!function_exists('get_user_id')) {
+    function get_user_id(): int {
+        return UserAuth::instance()->build()->getUserId();
     }
 }
 
