@@ -86,7 +86,7 @@ class AuthMiddleware extends AbstractController implements MiddlewareInterface
      * Author: fudaoji<fdj@kuryun.cn>
      */
     protected function needToken(){
-        if(in_array(strtolower($this->controller), ['home'])){
+        if(in_array(strtolower($this->controller), ['home', 'auth'])){
             return false;
         }
         return true;

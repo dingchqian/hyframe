@@ -10,9 +10,9 @@
 namespace App\Service;
 
 
-use App\Model\User;
+use App\Constants\ErrorCode;
+use App\Exception\ApiException;
 use App\Service\Dao\UserDao;
-use Hyperf\DbConnection\Db;
 use Hyperf\Di\Annotation\Inject;
 use HyperfX\Utils\Service;
 
@@ -27,50 +27,39 @@ class UserService extends Service
     /**
      * 注册
      * @param $params array
-     * @return object
+     * @return mixed
      * Author: Jason<dcq@kuryun.cn>
      */
     public function register(array $params) {
+        if($this->userDao->getOneByMap(['mobile' => $params['mobile']])) {
+            throw new ApiException(ErrorCode::BAD_PARAM, '该手机号已注册');
+        }
         $insert_data = $params;
         $insert_data['password'] = md5($params['password']);
         $result = $this->userDao->addOne($insert_data);
-
-        return UserAuth::instance()->init($result);
+        if($result) {
+            return UserAuth::instance()->init($result);
+        }
+        throw new ApiException(ErrorCode::BAD_PARAM, '注册失败');
     }
 
     /**
      * 登录
-     * @param array $params
+     * @param $params array
      * @return mixed
-     * Author: fudaoji<fdj@kuryun.cn>
+     * Author: Jason<dcq@kuryun.cn>
      */
-    public function login(array $params)
-    {
-        //启动事务
-        Db::beginTransaction();
-        try{
-            /**
-             * @var User
-             */
-            $result = $this->userDao->getOneByMap(['mobile' => $params['mobile']]);
-            if(! $result){
-                $result = $this->userDao->addOne([
-                    'mobile' => $params['mobile'],
-                    'last_time' => time(),
-                    'nickname' => 'yll' . time()
-                ]);
-            }else{
-                if($result->status < 1){
-                    return  '账号已被禁用！';
-                }
-                $result = $this->userDao->updateOne(['id' => $result['id'], 'last_time' => time()]);
-            }
-            Db::commit();
-        } catch(\Throwable $ex){
-            $this->logger->error('登录失败，错误信息' . json_encode($ex->getMessage(), JSON_UNESCAPED_UNICODE));
-            Db::rollBack();
-            $result = '登录失败！';
+    public function login(array $params) {
+        $result = $this->userDao->getOneByMap(['mobile' => $params['mobile']]);
+        if(!$result) {
+            throw new ApiException(ErrorCode::BAD_PARAM, '账号未注册');
         }
-        return $result;
+        if($result['password'] != md5($params['password'])) {
+            throw new ApiException(ErrorCode::BAD_PARAM, '账号或密码错误');
+        }
+        if($result) {
+            return UserAuth::instance()->init($result);
+        }
+        throw new ApiException(ErrorCode::BAD_PARAM, '登录失败');
     }
 }

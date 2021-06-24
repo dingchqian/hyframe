@@ -9,6 +9,8 @@
 declare(strict_types=1);
 namespace App\Request;
 
+use App\Constants\ErrorCode;
+use App\Exception\ApiException;
 use Hyperf\HttpServer\Request;
 use Hyperf\Validation\Contract\ValidatorFactoryInterface;
 use Hyperf\Di\Annotation\Inject;
@@ -68,10 +70,9 @@ abstract class BaseRequest
         );
 
         if ($validator->fails()){
-            return ['code' => 0, 'msg' => $validator->errors()->first()];
-        }else{
-            return ['code' => 1, 'data' => $validator->validated()];
+            throw new ApiException(ErrorCode::BAD_PARAM, $validator->errors()->first());
         }
+        return ['code' => 1, 'data' => $validator->validated()];
     }
 
     /**

@@ -43,12 +43,19 @@ class AuthController extends AbstractController
      */
     public function registerPost() {
         $res = $this->authValidator->doValidate('register');
-        if($res['code'] !== 1) {
-            return $this->response->fail(ErrorCode::BAD_PARAM, $res['msg']);
-        }
-        $params = $res['data'];
-        $user = $this->userService->register($params);
+        $user = $this->userService->register($res['data']);
 
-        return $this->response->success(['user_info' => $user->getUser()]);
+        return $this->response->success(['user_info' => $user->getUser()], '注册成功');
+    }
+
+    /**
+     * 登录
+     * Author: Jason<dcq@kuryun.cn>
+     */
+    public function loginPost() {
+        $res = $this->authValidator->doValidate('login');
+        $user = $this->userService->login($res['data']);
+
+        return $this->response->success(['token' => $user->getToken(), 'user_info' => $user->getUser()], '登录成功');
     }
 }

@@ -58,8 +58,17 @@ class AuthRequest extends BaseRequest
      * 注册场景
      * Author: Jason<dcq@kuryun.cn>
      */
-    public function sceneRegister(){
+    public function sceneRegister() {
         $fields = ['mobile', 'password', 'username', 'headimgurl'];
+        $this->setRules($fields);
+    }
+
+    /**
+     * 登录场景
+     * Author: Jason<dcq@kuryun.cn>
+     */
+    public function sceneLogin() {
+        $fields = ['mobile', 'password'];
         $this->setRules($fields);
     }
 }

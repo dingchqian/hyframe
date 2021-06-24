@@ -10,7 +10,7 @@
 namespace App\Service;
 
 use App\Constants\ErrorCode;
-use App\Exception\BusinessException;
+use App\Exception\ApiException;
 use App\Model\User;
 use App\Service\Dao\UserDao;
 use Hyperf\Redis\Redis;
@@ -37,7 +37,6 @@ class UserAuth
         $this->userId = $user->id;
         $this->token = $token ?? md5(uniqid());
         di()->get(Redis::class)->set($this->getRedisKey(), Json::encode(['id' => $user->id]));
-
         return $this;
     }
 
@@ -53,7 +52,6 @@ class UserAuth
         if($string && $data = Json::decode($string)) {
             $this->userId = intval($data['id'] ?? 0);
         }
-
         return $this;
     }
 
@@ -64,9 +62,8 @@ class UserAuth
      */
     public function build() {
         if ($this->getUserId() === 0) {
-            throw new BusinessException(ErrorCode::TOKEN_INVALID);
+            throw new ApiException(ErrorCode::TOKEN_INVALID);
         }
-
         return $this;
     }
 
@@ -94,12 +91,13 @@ class UserAuth
      * Author: Jason<dcq@kuryun.cn>
      */
     public function getUser(): User {
-        if ($this->user) {
+        if($this->user) {
             return $this->user;
         }
         $userId = $this->build()->getUserId();
-
-        return $this->user = di()->get(UserDao::class)->getOne($userId, true);
+        $user = $this->user = di()->get(UserDao::class)->getOne($userId, true);
+        unset($user['password']);
+        return $user;
     }
 
     /**
@@ -108,9 +106,8 @@ class UserAuth
      */
     protected function getRedisKey(): string {
         if(empty($this->token)) {
-            throw new BusinessException(ErrorCode::SERVER_ERROR, 'TOKEN 未正常初始化');
+            throw new ApiException(ErrorCode::TOKEN_INVALID);
         }
-
         return 'auth:' . $this->token;
     }
 }
