@@ -28,7 +28,7 @@ class AuthMiddleware extends AbstractController implements MiddlewareInterface
     {
         [$this->module, $this->controller, $this->action] = explode('/', substr($request->getUri()->getPath(), 1));
 
-        if($token = $this->request->getHeaderLine(UserAuth::X_TOKEN)){
+        if($token = $this->request->getHeaderLine(UserAuth::X_TOKEN)) {
             UserAuth::instance()->reload($token)->build();
         }
         if($this->needToken() && !$token) {
