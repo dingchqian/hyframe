@@ -20,4 +20,12 @@ class QueueTest extends HttpTestCase
         var_dump($res);
         $this->assertContains($res['code'], $this->codeArr);
     }
+
+    public function testQueueAmqp() {
+        $params = [];
+        $res = $this->doJson('/api/queue/amqpMsg', $params, true);
+
+        var_dump($res);
+        $this->assertContains($res['code'], $this->codeArr);
+    }
 }
